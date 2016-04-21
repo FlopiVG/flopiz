@@ -3,11 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <title>Flopi Z</title>
+    <link rel="stylesheet" href="/client/css/bootstrap.css">
 </head>
 <body>
+<div class="container">
+    <div class="jumbotron">
+        <canvas id="ctx" style="border: solid 1px #000000"></canvas>
+    </div>
+</div>
 <script src="/client/lib/socket.io-1.4.5.js"></script>
 <script>
+    var _ctx = document.getElementById('ctx');
+    var ctx = document.getElementById('ctx').getContext("2d");
+
+    _ctx.width = 1000;
+    _ctx.height = 700;
+
     var socket = io();
+
+    socket.on("newPosition", function(data){
+        ctx.clearRect(0, 0, _ctx.width, _ctx.height);
+        for(var i = 0; i < data.player.length; i++){
+            var p = data.player[i];
+            ctx.fillRect(p.x, p.y, p.width, p.height);
+        }
+    });
+
+    // Muestra el ping en el cliente
+    socket.emit('latency', Date.now(), function(startTime) {
+        var latency = Date.now() - startTime;
+        console.log(latency);
+    });
+
+    //SEND KEYS
+    document.onkeydown = function(event){
+        if(event.keyCode === 68) //d
+            socket.emit('keyPress',{inputId:'right',state:true})
+        else if(event.keyCode === 83) //s
+            socket.emit('keyPress',{inputId:'down',state:true});
+        else if(event.keyCode === 65) //a
+            socket.emit('keyPress',{inputId:'left',state:true});
+        else if(event.keyCode === 87) //w
+            socket.emit('keyPress',{inputId:'up',state:true});
+    };
+    document.onkeyup = function(event){
+        if(event.keyCode === 68) //d
+            socket.emit('keyPress',{inputId:'right',state:false})
+        else if(event.keyCode === 83) //s
+            socket.emit('keyPress',{inputId:'down',state:false});
+        else if(event.keyCode === 65) //a
+            socket.emit('keyPress',{inputId:'left',state:false});
+        else if(event.keyCode === 87) //w
+            socket.emit('keyPress',{inputId:'up',state:false});
+    };
 </script>
 </body>
 </html>
