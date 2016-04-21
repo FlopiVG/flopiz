@@ -44,6 +44,13 @@
                 ctx.restore();
             }
         }
+        for(var i = 0; i < data.obstaculo.length; i++){
+            var o = data.obstaculo[i];
+            ctx.save();
+            ctx.fillStyle = "brown";
+            ctx.fillRect(o.x, o.y, o.width, o.height);
+            ctx.restore();
+        }
     });
 
     // Muestra el ping en el cliente
