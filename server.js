@@ -112,7 +112,7 @@ io.sockets.on('connection', function(socket){
     SOCKET_LIST[socket.id] = socket;
     Player.onConnect(socket);
 
-    socket.on("disconnected", function () {
+    socket.on("disconnect", function () {
         delete SOCKET_LIST[socket.id];
         Player.onDisconnect(socket);
     });
