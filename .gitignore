@@ -1,0 +1,9 @@
+# Created by .ignore support plugin (hsz.mobi)
+
+# npm modules
+/node_modules/
+npm-debug.log
+
+# webstorm config
+/.idea/
+
