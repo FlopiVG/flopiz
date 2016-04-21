@@ -21,11 +21,28 @@
 
     var socket = io();
 
+    var PLAYER = "";
+    socket.on("sendPlayer", function(data){
+        PLAYER = data;
+    });
+
     socket.on("newPosition", function(data){
         ctx.clearRect(0, 0, _ctx.width, _ctx.height);
+        //MAP
+        ctx.save();
+        ctx.fillStyle = "grey";
+        ctx.fillRect(0,0,_ctx.width,_ctx.height);
+        ctx.restore();
+
         for(var i = 0; i < data.player.length; i++){
             var p = data.player[i];
             ctx.fillRect(p.x, p.y, p.width, p.height);
+            if(p.id === PLAYER.id){
+                ctx.save();
+                ctx.strokeStyle = "red";
+                ctx.strokeRect(p.x, p.y, p.width, p.height);
+                ctx.restore();
+            }
         }
     });
 

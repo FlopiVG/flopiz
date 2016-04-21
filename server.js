@@ -13,6 +13,9 @@ app.use('/client', express.static(__dirname + '/client'));
 serv.listen(5000);
 console.log("Server started.");
 
+var WIDTH = 1000;
+var HEIGHT = 700;
+
 var Entity = function(id, x, y, width, height){
     var self = {
         id: id,
@@ -69,7 +72,7 @@ var Player = function(id, x, y, width, height){
 };
 Player.list = {};
 Player.onConnect = function(socket){
-    var player = Player(socket.id, 100, 100, 20, 20);
+    var player = Player(socket.id, WIDTH/2, HEIGHT/2, 20, 20);
 
     socket.on('keyPress', function(data){
         if(data.inputId === 'left')
@@ -85,8 +88,11 @@ Player.onConnect = function(socket){
         else if(data.inputId === 'mouseAngle')
             player.mouseAngle = data.state;
     });
+
+    socket.emit("sendPlayer", player);
 };
 Player.onDisconnect = function(socket){
+    console.log("Cliente " + socket.id + " desconectado.");
     delete Player.list[socket.id];
 };
 Player.update = function(socket){
@@ -95,6 +101,7 @@ Player.update = function(socket){
         var player = Player.list[i];
         player.update();
         pack.push({
+            id: player.id,
             x: player.x,
             y: player.y,
             width: player.width,
@@ -107,10 +114,10 @@ Player.update = function(socket){
 var SOCKET_LIST = {};
 var io = require('socket.io')(serv,{});
 io.sockets.on('connection', function(socket){
-    console.log("Client conected");
     socket.id = Math.random();
     SOCKET_LIST[socket.id] = socket;
     Player.onConnect(socket);
+    console.log("Cliente " + socket.id + " conectado.");
 
     socket.on("disconnect", function () {
         delete SOCKET_LIST[socket.id];
