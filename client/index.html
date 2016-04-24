@@ -51,6 +51,13 @@
             ctx.fillRect(o.x, o.y, o.width, o.height);
             ctx.restore();
         }
+        for(var i = 0;i < data.zombie.length; i++){
+            var z = data.zombie[i];
+            ctx.save();
+            ctx.fillStyle = "green";
+            ctx.fillRect(z.x, z.y, z.width, z.height);
+            ctx.restore();
+        }
     });
 
     // Muestra el ping en el cliente

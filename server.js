@@ -14,6 +14,8 @@ serv.listen(5000, function(){
     // LOAD START MAP
     console.log("Load obstaculos");
     Obstaculo.onConnect();
+    console.log("Load zombies");
+    Zombie.onConnect();
 });
 console.log("Server started.");
 
@@ -70,6 +72,7 @@ var Entity = function(id, x, y, width, height){
 
     return self;
 };
+
 var Obstaculo = function(id, x, y, width, height){
     var self = Entity(id,x, y, width, height);
 
@@ -95,6 +98,7 @@ Obstaculo.update = function(socket){
     }
     return pack;
 };
+
 var Actor = function (id, x, y, width, height) {
     var self = Entity(id, x, y, width, height);
     self.spdX = 0;
@@ -115,14 +119,115 @@ var Actor = function (id, x, y, width, height) {
         // Obstaculo colision
         for(var i in Obstaculo.list){
             var o = Obstaculo.list[i];
-            var side = self.collisionSide(self, o);
-            if(side === "l" || side === "r") self.spdX = 0;
-            if(side === "t" || side === "b") self.spdY = 0;
+            if (o.id !== self.id) {
+                var side = self.collisionSide(self, o);
+                if (side === "l" || side === "r") self.spdX = 0;
+                if (side === "t" || side === "b") self.spdY = 0;
+            }
+        }
+        // Zombie colision
+        for(var i in Zombie.list){
+            var z = Zombie.list[i];
+            if (z.id !== self.id){
+                var side = self.collisionSide(self, z);
+                if(side === "l" || side === "r") self.spdX = 0;
+                if(side === "t" || side === "b") self.spdY = 0;
+            }
+        }
+        // Player colision
+        for(var i in Player.list){
+            var p = Player.list[i];
+            if (p.id !== self.id){
+                var side = self.collisionSide(self, p);
+                if(side === "l" || side === "r") self.spdX = 0;
+                if(side === "t" || side === "b") self.spdY = 0;
+            }
         }
     };
 
     return self;
 };
+
+var Zombie = function(id, x, y){
+    var self = Actor(id, x, y, 10, 10);
+    self.nearPlayers = {};
+    self.agro;
+    self.distanceView = 200; //Distancia para que encuentre al player
+
+    var super_update = self.update;
+    self.update = function(){
+        super_update();
+        self.updateSpd();
+        self.getPlayerDistance();
+        self.removeFarPlayers();
+        self.getNearPlayer();
+    };
+
+    self.updateSpd = function() {
+      if (self.agro){
+        var diffX = self.agro.x - self.x;
+        var diffY = self.agro.y - self.y;
+
+        if (diffX > 0)
+            self.x += 3;
+        else
+            self.x -= 3;
+
+        if (diffY > 0)
+            self.y += 3;
+        else
+            self.y -= 3;
+      }
+    };
+
+    self.getPlayerDistance = function(){
+      for (var i in Player.list){
+        var p = Player.list[i];
+        self.nearPlayers[p.id] = {
+          id: p.id,
+          x: p.x,
+          y: p.y,
+          distance: self.getDistance(p)
+        }
+      }
+    };
+
+    self.removeFarPlayers = function(){
+      for(var i in self.nearPlayers) if (self.nearPlayers[i].distance > self.distanceView) delete self.nearPlayers[i];
+    };
+
+    self.getNearPlayer = function(){
+      var near = Object.keys(self.nearPlayers).map(key => self.nearPlayers[key]).reduce((prev, current) => {
+        if (prev.distance < current.distance) return prev;
+        else return current;
+      }, 0);
+      self.agro = near;
+    };
+
+    Zombie.list[self.id] = self;
+    return self;
+};
+Zombie.list = {};
+Zombie.onConnect = function(socket){
+    Zombie(Math.random(), 400, 200);
+    Zombie(Math.random(), 300, 200);
+    Zombie(Math.random(), 800, 300);
+};
+Zombie.update = function(socket){
+    var pack = [];
+    for(var i in Zombie.list){
+        var zombie = Zombie.list[i];
+        zombie.update();
+        pack.push({
+            x: zombie.x,
+            y: zombie.y,
+            width: zombie.width,
+            height: zombie.height
+        });
+    }
+    return pack;
+};
+
 var Player = function(id, x, y, width, height){
     var self = Actor(id, x, y, width, height);
     self.pressingRight = false;
@@ -212,7 +317,8 @@ io.sockets.on('connection', function(socket){
 setInterval(function(){
     var pack = {
         player: Player.update(),
-        obstaculo: Obstaculo.update()
+        obstaculo: Obstaculo.update(),
+        zombie: Zombie.update()
     };
 
     for (var i in SOCKET_LIST){
